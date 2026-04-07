@@ -1,5 +1,14 @@
 
 Hooks.once("ready", () => {
+  game.settings.register("spire-refresh-fallout-override", "heartStyleFallout", {
+    name: "Heart-Style Fallout Checks",
+    hint: "When this option is turned on, the severity of fallout is based on the d10 result rather than the character's total stress.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
   const sheetClasses = Object.values(CONFIG.Actor.sheetClasses)
     .flatMap(type => Object.values(type))
     .map(entry => entry.cls);
@@ -177,10 +186,13 @@ async function runFallout(actor) {
     return;
   }
 
+  const heartStyle = game.settings.get("spire-refresh-fallout-override", "heartStyleFallout");
+  const severity = heartStyle ? roll.total : totalStress;
+
   let category = "Minor Fallout";
   let pool = 3;
-  if (totalStress >= 5 && totalStress <= 8) { category = "Moderate Fallout"; pool = 5; }
-  if (totalStress >= 9) { category = "Severe Fallout"; pool = 7; }
+  if (severity >= 5 && severity <= 8) { category = "Moderate Fallout"; pool = 5; }
+  if (severity >= 9) { category = "Severe Fallout"; pool = 7; }
 
   // Send chat card with roll result and a "Clear Stress" button
   await ChatMessage.create({
