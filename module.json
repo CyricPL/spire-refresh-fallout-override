@@ -1,0 +1,21 @@
+{
+  "id": "spire-refresh-fallout-override",
+  "title": "Spire Refresh & Fallout Override",
+  "description": "Overrides Refresh and Fallout buttons for Spire system (Foundry v13).",
+  "version": "1.3.4",
+  "authors": [
+    { "name": "Custom Override" }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "relationships": {
+    "systems": [
+      { "id": "spire", "type": "system" }
+    ]
+  },
+  "scripts": [
+    "scripts/override.js"
+  ]
+}
