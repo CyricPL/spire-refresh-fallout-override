@@ -59,10 +59,16 @@ Hooks.on("renderChatMessage", (_msg, html) => {
     const actor = game.actors.get(actorId);
     if (!actor) return;
 
-    // Disable button so it can't be clicked again
     btn.prop("disabled", true).text("Clearing…");
 
-    await allocateStress(actor, pool, category, null);
+    const confirmed = await allocateStress(actor, pool, category, null);
+    if (confirmed) {
+      // Replace button with plain text
+      btn.replaceWith('<p style="text-align:center;font-weight:bold;margin-top:8px;">Cleared</p>');
+    } else {
+      // Restore button on cancel
+      btn.prop("disabled", false).text("Clear Stress");
+    }
   });
 });
 
@@ -216,7 +222,7 @@ async function allocateStress(actor, pool, title, roll=null) {
   let allocations = {};
   keys.forEach(k => allocations[k] = 0);
 
-  await new Promise(resolve => {
+  const confirmed = await new Promise(resolve => {
     new Dialog({
       title: `${title} — Remove Stress`,
       content: buildContent(),
@@ -254,10 +260,10 @@ async function allocateStress(actor, pool, title, roll=null) {
               rolls: roll ? [roll] : []
             });
 
-            resolve();
+            resolve(true);
           }
         },
-        cancel: { label: "Cancel", callback: () => resolve() }
+        cancel: { label: "Cancel", callback: () => resolve(false) }
       },
       render: html => {
         const remainingEl = html.find("#remaining");
@@ -293,6 +299,8 @@ async function allocateStress(actor, pool, title, roll=null) {
       }
     }).render(true);
   });
+
+  return confirmed;
 
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
