@@ -46,6 +46,30 @@ Hooks.once("ready", () => {
   };
 });
 
+/* ------------------------------------------------------------------ */
+/*  Chat card button handler for "Clear Stress"                       */
+/* ------------------------------------------------------------------ */
+
+Hooks.on("renderChatMessage", (_msg, html) => {
+  html.find(".clear-stress-btn").on("click", async function () {
+    const btn = $(this);
+    const actorId = btn.data("actor-id");
+    const pool = parseInt(btn.data("pool"));
+    const category = btn.data("category");
+    const actor = game.actors.get(actorId);
+    if (!actor) return;
+
+    // Disable button so it can't be clicked again
+    btn.prop("disabled", true).text("Clearing…");
+
+    await allocateStress(actor, pool, category, null);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  Refresh                                                           */
+/* ------------------------------------------------------------------ */
+
 async function runRefresh(actor) {
   if (!actor) return;
 
@@ -124,6 +148,10 @@ async function runRefresh(actor) {
   }).render(true);
 }
 
+/* ------------------------------------------------------------------ */
+/*  Fallout                                                           */
+/* ------------------------------------------------------------------ */
+
 async function runFallout(actor) {
   if (!actor) return;
 
@@ -148,8 +176,31 @@ async function runFallout(actor) {
   if (totalStress >= 5 && totalStress <= 8) { category = "Moderate Fallout"; pool = 5; }
   if (totalStress >= 9) { category = "Severe Fallout"; pool = 7; }
 
-  await allocateStress(actor, pool, category, roll);
+  // Send chat card with roll result and a "Clear Stress" button
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({actor}),
+    content: `
+      <div class="spire chat-card">
+        <header class="card-header"><h3>${category}</h3></header>
+        <div class="card-content">
+          ${await roll.render()}
+          <p><strong>${category}</strong> occurred! Clear <strong>${pool}</strong> stress from the pool.</p>
+          <button type="button" class="clear-stress-btn"
+                  data-actor-id="${actor.id}"
+                  data-pool="${pool}"
+                  data-category="${category}"
+                  style="width:100%;margin-top:8px;padding:6px 0;font-size:14px;font-weight:bold;cursor:pointer;">
+            Clear Stress
+          </button>
+        </div>
+      </div>`,
+    rolls: [roll]
+  });
 }
+
+/* ------------------------------------------------------------------ */
+/*  Shared stress allocation dialog                                   */
+/* ------------------------------------------------------------------ */
 
 async function allocateStress(actor, pool, title, roll=null) {
   const keys = ["blood","mind","silver","shadow","reputation","armor"];
@@ -167,7 +218,7 @@ async function allocateStress(actor, pool, title, roll=null) {
 
   await new Promise(resolve => {
     new Dialog({
-      title: `${title} Stress Allocation`,
+      title: `${title} — Remove Stress`,
       content: buildContent(),
       buttons: {
         confirm: {
