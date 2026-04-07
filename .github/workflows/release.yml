@@ -1,0 +1,29 @@
+name: Release Module
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Substitute version in module.json
+        run: sed -i 's/#{VERSION}#/${{ steps.version.outputs.version }}/g' module.json
+
+      - name: Create module.zip
+        run: zip -r module.zip module.json scripts/
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" module.zip module.json --clobber
