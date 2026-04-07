@@ -2,7 +2,7 @@
 Hooks.once("ready", () => {
   game.settings.register("spire-refresh-fallout-override", "heartStyleFallout", {
     name: "Heart-Style Fallout Checks",
-    hint: "When this option is turned on, the severity of fallout is based on the d10 result rather than the character's total stress.",
+    hint: "When this option is turned on, the severity of fallout is based on the d10 result rather than the character's total stress. Fallout is suffered if the d10 result is less than OR EQUAL TO the d10.",
     scope: "world",
     config: true,
     type: Boolean,
@@ -173,7 +173,10 @@ async function runFallout(actor) {
   const totalStress = foundry.utils.getProperty(actor.system, "totalStress") ?? 0;
   const roll = await new Roll("1d10").roll({async:true});
 
-  if (roll.total >= totalStress) {
+  const heartStyle = game.settings.get("spire-refresh-fallout-override", "heartStyleFallout");
+  const noFallout = heartStyle ? roll.total > totalStress : roll.total >= totalStress;
+
+  if (noFallout) {
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({actor}),
       content: `
@@ -186,7 +189,6 @@ async function runFallout(actor) {
     return;
   }
 
-  const heartStyle = game.settings.get("spire-refresh-fallout-override", "heartStyleFallout");
   const severity = heartStyle ? roll.total : totalStress;
 
   let category = "Minor Fallout";
