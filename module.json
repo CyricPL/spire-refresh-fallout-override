@@ -4,7 +4,7 @@
   "description": "Overrides Refresh and Fallout buttons for Spire system (Foundry v13).",
   "version": "#{VERSION}#",
   "authors": [
-    { "name": "Custom Override" }
+    { "name": "CyricPL" }
   ],
   "compatibility": {
     "minimum": "13",
